@@ -10,27 +10,27 @@ module Fastlane
       end
 
       show_infos
-      response = agree('Do you have everything committed in version control? If not please do so now! (y/n)'.yellow, true)
-      return unless response
+      # response = agree('Do you have everything committed in version control? If not please do so now! (y/n)'.yellow, true)
+      # return unless response
 
       # rubocop:disable Lint/RescueException
-      begin
+      # begin
         FastlaneFolder.create_folder! unless Helper.is_test?
         copy_existing_files
-        generate_appfile
+        default_generate_appfile
         detect_installed_tools # after copying the existing files
         ask_to_enable_other_tools
         FileUtils.mkdir(File.join(FastlaneFolder.path, 'actions'))
         generate_fastfile
         show_analytics
         Helper.log.info 'Successfully finished setting up fastlane'.green
-      rescue Exception => ex # this will also be caused by Ctrl + C
-        # Something went wrong with the setup, clear the folder again
-        # and restore previous files
-        Helper.log.fatal 'Error occurred with the setup program! Reverting changes now!'.red
-        restore_previous_state
-        raise ex
-      end
+      # rescue Exception => ex # this will also be caused by Ctrl + C
+      #   # Something went wrong with the setup, clear the folder again
+      #   # and restore previous files
+      #   Helper.log.fatal 'Error occurred with the setup program! Reverting changes now!'.red
+      #   restore_previous_state
+      #   raise ex
+      # end
       # rubocop:enable Lint/RescueException
     end
 
@@ -58,10 +58,12 @@ module Fastlane
     end
 
     def default_generate_appfile
-      # ask for user's apple id
       # get the proper xcodeproj/workspace and determine the bundle_id
-      # fill in the appfile
-      create_appfile(app_identifier, apple_id)
+      # team ID
+      config = {}
+      FastlaneCore::Project.detect_projects(config)
+      project = FastlaneCore::Project.new(config)
+      create_appfile(project.app_identifier, ask_for_apple_id)
     end
 
     def generate_appfile
@@ -69,8 +71,12 @@ module Fastlane
       Helper.log.info 'To not re-enter your username and app identifier every time you run one of the fastlane tools or fastlane, these will be stored from now on.'.green
 
       app_identifier = ask('App Identifier (com.krausefx.app): '.yellow)
-      apple_id = ask('Your Apple ID (fastlane@krausefx.com): '.yellow)
+      apple_id = ask_for_apple_id
       create_appfile(app_identifier, apple_id)
+    end
+
+    def ask_for_apple_id
+      ask('Your Apple ID (fastlane@krausefx.com): '.yellow)
     end
 
     def create_appfile(app_identifier, apple_id)
@@ -97,14 +103,7 @@ module Fastlane
         Helper.log.info 'Since all files are moved into the `fastlane` subfolder, you have to adapt your Deliverfile'.yellow
       else
         if agree("Do you want to setup 'deliver', which is used to upload app screenshots, app metadata and app updates to the App Store? This requires the app to be in the App Store already. (y/n)".yellow, true)
-          Helper.log.info "Loading up 'deliver', this might take a few seconds"
-          require 'deliver'
-          require 'deliver/setup'
-          options = FastlaneCore::Configuration.create(Deliver::Options.available_options, {})
-          Deliver::Runner.new(options) # to login...
-          Deliver::Setup.new.run(options)
-
-          @tools[:deliver] = true
+          enable_deliver
         end
       end
 
@@ -121,6 +120,17 @@ module Fastlane
       end
 
       @tools[:sigh] = true if agree("Do you want to use 'sigh', which will maintain and download the provisioning profile for your app? (y/n)".yellow, true)
+    end
+
+    def enable_deliver
+      Helper.log.info "Loading up 'deliver', this might take a few seconds"
+      require 'deliver'
+      require 'deliver/setup'
+      options = FastlaneCore::Configuration.create(Deliver::Options.available_options, {})
+      Deliver::Runner.new(options) # to login...
+      Deliver::Setup.new.run(options)
+
+      @tools[:deliver] = true
     end
 
     def generate_fastfile
