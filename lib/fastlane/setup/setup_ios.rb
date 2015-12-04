@@ -19,9 +19,9 @@ module Fastlane
         copy_existing_files
         default_generate_appfile
         detect_installed_tools # after copying the existing files
-        ask_to_enable_other_tools
+        default_enable_other_tools
         FileUtils.mkdir(File.join(FastlaneFolder.path, 'actions'))
-        generate_fastfile
+        default_generate_fastfile
         show_analytics
         Helper.log.info 'Successfully finished setting up fastlane'.green
       # rescue Exception => ex # this will also be caused by Ctrl + C
@@ -63,7 +63,7 @@ module Fastlane
       config = {}
       FastlaneCore::Project.detect_projects(config)
       project = FastlaneCore::Project.new(config)
-      create_appfile(project.app_identifier, ask_for_apple_id)
+      create_appfile(project.default_app_identifier, 'ohayon@me.com')
     end
 
     def generate_appfile
@@ -109,17 +109,33 @@ module Fastlane
 
       unless @tools[:snapshot]
         if Helper.mac? and agree("Do you want to setup 'snapshot', which will help you to automatically take screenshots of your iOS app in all languages/devices? (y/n)".yellow, true)
-          Helper.log.info "Loading up 'snapshot', this might take a few seconds"
-
-          require 'snapshot'
-          require 'snapshot/setup'
-          Snapshot::Setup.create(folder)
-
-          @tools[:snapshot] = true
+          enable_snapshot
         end
       end
 
-      @tools[:sigh] = true if agree("Do you want to use 'sigh', which will maintain and download the provisioning profile for your app? (y/n)".yellow, true)
+      if agree("Do you want to use 'sigh', which will maintain and download the provisioning profile for your app? (y/n)".yellow, true)
+        enable_sigh
+      end
+    end
+
+    def default_enable_other_tools
+      enable_deliver
+      # enable_snapshot
+      enable_sigh
+    end
+
+    def enable_sigh
+      @tools[:sigh] = true
+    end
+
+    def enable_snapshot
+      Helper.log.info "Loading up 'snapshot', this might take a few seconds"
+
+      require 'snapshot'
+      require 'snapshot/setup'
+      Snapshot::Setup.create(folder)
+
+      @tools[:snapshot] = true
     end
 
     def enable_deliver
@@ -133,10 +149,17 @@ module Fastlane
       @tools[:deliver] = true
     end
 
-    def generate_fastfile
+    def default_generate_fastfile
+      config = {}
+      FastlaneCore::Project.detect_projects(config)
+      project = FastlaneCore::Project.new(config)
+      generate_fastfile(scheme: project.schemes.first)
+    end
+
+    def generate_fastfile(scheme: nil)
       template = File.read("#{Helper.gem_path('fastlane')}/lib/assets/FastfileTemplate")
 
-      scheme = ask("Optional: The scheme name of your app (If you don't need one, just hit Enter): ").to_s.strip
+      scheme = ask("Optional: The scheme name of your app (If you don't need one, just hit Enter): ").to_s.strip unless scheme
       if scheme.length > 0
         template.gsub!('[[SCHEME]]', "(scheme: \"#{scheme}\")")
       else
