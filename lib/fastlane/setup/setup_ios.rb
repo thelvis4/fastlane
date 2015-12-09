@@ -19,6 +19,7 @@ module Fastlane
         copy_existing_files
         default_generate_appfile
         detect_installed_tools # after copying the existing files
+        default_run_produce
         default_enable_other_tools
         FileUtils.mkdir(File.join(FastlaneFolder.path, 'actions'))
         default_generate_fastfile
@@ -86,6 +87,27 @@ module Fastlane
       path = File.join(folder, 'Appfile')
       File.write(path, template)
       Helper.log.info "Created new file '#{path}'. Edit it to manage your preferred app metadata information.".green
+    end
+
+    def default_run_produce
+      Helper.log.info "Running produce..."
+      require 'produce'
+      config = {}
+      FastlaneCore::Project.detect_projects(config)
+      project = FastlaneCore::Project.new(config)
+
+      produce_options_hash = {
+          app_name: project.default_app_name
+      }
+      Produce.config = FastlaneCore::Configuration.create(Produce::Options.available_options, produce_options_hash)
+      begin
+        ENV['PRODUCE_APPLE_ID'] = Produce::Manager.start_producing
+      rescue Exception => exception
+        Helper.log.info 'It looks like that App Name has already been taken, please enter an alternative.'.yellow
+        Produce.config[:app_name] = ask("App Name:".yellow)
+        Produce.config[:skip_devcenter] = true
+        ENV['PRODUCE_APPLE_ID'] = Produce::Manager.start_producing
+      end
     end
 
     def detect_installed_tools
