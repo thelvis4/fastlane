@@ -10,11 +10,11 @@ module Fastlane
       end
 
       show_infos
-      # response = agree('Do you have everything committed in version control? If not please do so now! (y/n)'.yellow, true)
-      # return unless response
+      response = agree('Do you have everything committed in version control? If not please do so now! (y/n)'.yellow, true)
+      return unless response
 
       # rubocop:disable Lint/RescueException
-      # begin
+      begin
         FastlaneFolder.create_folder! unless Helper.is_test?
         copy_existing_files
         default_generate_appfile
@@ -25,13 +25,13 @@ module Fastlane
         default_generate_fastfile
         show_analytics
         Helper.log.info 'Successfully finished setting up fastlane'.green
-      # rescue Exception => ex # this will also be caused by Ctrl + C
-      #   # Something went wrong with the setup, clear the folder again
-      #   # and restore previous files
-      #   Helper.log.fatal 'Error occurred with the setup program! Reverting changes now!'.red
-      #   restore_previous_state
-      #   raise ex
-      # end
+      rescue Exception => ex # this will also be caused by Ctrl + C
+        # Something went wrong with the setup, clear the folder again
+        # and restore previous files
+        Helper.log.fatal 'Error occurred with the setup program! Reverting changes now!'.red
+        restore_previous_state
+        raise ex
+      end
       # rubocop:enable Lint/RescueException
     end
 
