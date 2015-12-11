@@ -10,8 +10,6 @@ module Fastlane
       end
 
       show_infos
-      response = agree('Do you have everything committed in version control? If not please do so now! (y/n)'.yellow, true)
-      return unless response
 
       # rubocop:disable Lint/RescueException
       begin
@@ -64,7 +62,8 @@ module Fastlane
       config = {}
       FastlaneCore::Project.detect_projects(config)
       project = FastlaneCore::Project.new(config)
-      create_appfile(project.default_app_identifier, ask_for_apple_id)
+      apple_id = ask_for_apple_id
+      create_appfile(project.default_app_identifier, apple_id)
     end
 
     def generate_appfile
@@ -179,7 +178,7 @@ module Fastlane
     end
 
     def generate_fastfile(scheme: nil)
-      template = File.read("#{Helper.gem_path('fastlane')}/lib/assets/FastfileTemplate")
+      template = File.read("#{Helper.gem_path('fastlane')}/lib/assets/DefaultFastfileTemplate")
 
       scheme = ask("Optional: The scheme name of your app (If you don't need one, just hit Enter): ").to_s.strip unless scheme
       if scheme.length > 0
