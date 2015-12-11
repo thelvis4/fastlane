@@ -64,7 +64,7 @@ module Fastlane
       config = {}
       FastlaneCore::Project.detect_projects(config)
       project = FastlaneCore::Project.new(config)
-      create_appfile(project.default_app_identifier, 'ohayon@me.com')
+      create_appfile(project.default_app_identifier, ask_for_apple_id)
     end
 
     def generate_appfile
