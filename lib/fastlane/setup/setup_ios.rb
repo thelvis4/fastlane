@@ -23,7 +23,7 @@ module Fastlane
         default_generate_fastfile
         show_analytics
         Helper.log.info 'Successfully finished setting up fastlane'.green
-      rescue Exception => ex # this will also be caused by Ctrl + C
+      rescue => ex # this will also be caused by Ctrl + C
         # Something went wrong with the setup, clear the folder again
         # and restore previous files
         Helper.log.fatal 'Error occurred with the setup program! Reverting changes now!'.red
@@ -101,11 +101,13 @@ module Fastlane
       Produce.config = FastlaneCore::Configuration.create(Produce::Options.available_options, produce_options_hash)
       begin
         ENV['PRODUCE_APPLE_ID'] = Produce::Manager.start_producing
-      rescue Exception => exception
-        Helper.log.info 'It looks like that App Name has already been taken, please enter an alternative.'.yellow
-        Produce.config[:app_name] = ask("App Name:".yellow)
-        Produce.config[:skip_devcenter] = true
-        ENV['PRODUCE_APPLE_ID'] = Produce::Manager.start_producing
+      rescue => exception
+        if exception.to_s.include?("The App Name you entered has already been used")
+          Helper.log.info 'It looks like that App Name has already been taken, please enter an alternative.'.yellow
+          Produce.config[:app_name] = ask("App Name: ".yellow)
+          Produce.config[:skip_devcenter] = true
+          ENV['PRODUCE_APPLE_ID'] = Produce::Manager.start_producing
+        end
       end
     end
 
