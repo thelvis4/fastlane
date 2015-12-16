@@ -66,15 +66,6 @@ module Fastlane
       create_appfile(project.default_app_identifier, apple_id)
     end
 
-    def generate_appfile
-      Helper.log.info '------------------------------'
-      Helper.log.info 'To not re-enter your username and app identifier every time you run one of the fastlane tools or fastlane, these will be stored from now on.'.green
-
-      app_identifier = ask('App Identifier (com.krausefx.app): '.yellow)
-      apple_id = ask_for_apple_id
-      create_appfile(app_identifier, apple_id)
-    end
-
     def ask_for_apple_id
       ask('Your Apple ID (e.g. fastlane@krausefx.com): '.yellow)
     end
@@ -119,26 +110,6 @@ module Fastlane
       @tools[:cocoapods] = File.exist?(File.join(File.expand_path('..', folder), 'Podfile'))
       @tools[:carthage] = File.exist?(File.join(File.expand_path('..', folder), 'Cartfile'))
       @tools[:sigh] = false
-    end
-
-    def ask_to_enable_other_tools
-      if @tools[:deliver] # deliver already enabled
-        Helper.log.info 'Since all files are moved into the `fastlane` subfolder, you have to adapt your Deliverfile'.yellow
-      else
-        if agree("Do you want to setup 'deliver', which is used to upload app screenshots, app metadata and app updates to the App Store? This requires the app to be in the App Store already. (y/n)".yellow, true)
-          enable_deliver
-        end
-      end
-
-      unless @tools[:snapshot]
-        if Helper.mac? and agree("Do you want to setup 'snapshot', which will help you to automatically take screenshots of your iOS app in all languages/devices? (y/n)".yellow, true)
-          enable_snapshot
-        end
-      end
-
-      if agree("Do you want to use 'sigh', which will maintain and download the provisioning profile for your app? (y/n)".yellow, true)
-        enable_sigh
-      end
     end
 
     def default_enable_other_tools
