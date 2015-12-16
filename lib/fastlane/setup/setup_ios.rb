@@ -76,7 +76,7 @@ module Fastlane
     end
 
     def ask_for_apple_id
-      ask('Your Apple ID (fastlane@krausefx.com): '.yellow)
+      ask('Your Apple ID (e.g. fastlane@krausefx.com): '.yellow)
     end
 
     def create_appfile(app_identifier, apple_id)
