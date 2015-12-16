@@ -143,7 +143,6 @@ module Fastlane
 
     def default_enable_other_tools
       enable_deliver
-      # enable_snapshot
       enable_sigh
     end
 
